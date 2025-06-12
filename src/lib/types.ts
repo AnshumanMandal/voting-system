@@ -3,7 +3,8 @@ export interface Candidate {
   name: string;
   image: string;
   votes: number;
-  createdAt: number; // Add this field for ordering
+  createdAt: number;
+  description: string; // Add this field
 }
 
 export interface Vote {
