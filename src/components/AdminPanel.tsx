@@ -35,28 +35,24 @@ export default function AdminPanel() {
 
   // Initialize and listen to voting status
   useEffect(() => {
-    const initVotingStatus = async () => {
+    // Get initial voting status
+    const getInitialStatus = async () => {
       const statusRef = doc(db, 'settings', 'votingStatus');
       const statusDoc = await getDoc(statusRef);
-      
-      if (!statusDoc.exists()) {
-        await setDoc(statusRef, {
-          isEnabled: false,
-          lastUpdated: Date.now()
-        });
+      if (statusDoc.exists()) {
+        setIsVotingEnabled(statusDoc.data()?.isEnabled || false);
       }
     };
+    getInitialStatus();
 
-    initVotingStatus();
-
-    // Listen to voting status changes
-    const unsubscribeStatus = onSnapshot(doc(db, 'settings', 'votingStatus'), (doc) => {
+    // Listen for changes
+    const unsubscribe = onSnapshot(doc(db, 'settings', 'votingStatus'), (doc) => {
       if (doc.exists()) {
         setIsVotingEnabled(doc.data()?.isEnabled || false);
       }
     });
 
-    return () => unsubscribeStatus();
+    return () => unsubscribe();
   }, []);
 
   const addCandidate = async () => {
@@ -156,16 +152,14 @@ export default function AdminPanel() {
   // Update the toggle function
   const toggleVoting = async () => {
     try {
-      console.log('Current voting status:', isVotingEnabled); // Debug log
       const statusRef = doc(db, 'settings', 'votingStatus');
       const newStatus = !isVotingEnabled;
       
       await setDoc(statusRef, {
         isEnabled: newStatus,
         lastUpdated: Date.now()
-      });
+      }, { merge: true }); // Add merge option
       
-      console.log('New voting status:', newStatus); // Debug log
       toast.success(`Voting is now ${newStatus ? 'open' : 'closed'}`);
     } catch (error) {
       console.error('Error toggling voting status:', error);
