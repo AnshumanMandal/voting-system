@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Candidate } from '@/lib/types';
 import { Vote, CheckCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast'; // Changed from react-toastify to react-hot-toast
 
 interface VotingCardProps {
   candidate: Candidate;
@@ -64,13 +65,31 @@ export default function VotingCard({
   hasVoted, 
   rank, 
   totalVotes,
-  isAdmin = false,
-  isVotingEnabled = false 
+  isAdmin = false
 }: VotingCardProps) {
   const [isVoting, setIsVoting] = useState(false);
+  const [isPrivateMode, setIsPrivateMode] = useState(false);
   const avatarColor = generateRandomColor(candidate.id);
 
+  useEffect(() => {
+    // Check for private mode on component mount
+    const checkPrivateMode = async () => {
+      try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+        setIsPrivateMode(false);
+      } catch (e) {
+        setIsPrivateMode(true);
+      }
+    };
+    checkPrivateMode();
+  }, []);
+
   const handleVote = async () => {
+    if (isPrivateMode) {
+      toast.error('Please use a regular browser window to vote');
+      return;
+    }
     setIsVoting(true);
     await onVote(candidate.id);
     setIsVoting(false);
@@ -115,19 +134,21 @@ export default function VotingCard({
         {!isAdmin && (
           <button
             onClick={handleVote}
-            disabled={hasVoted || !isVotingEnabled}
+            disabled={hasVoted || isVoting || isPrivateMode}
             className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 
               ${hasVoted 
                 ? 'bg-green-100 text-green-700 cursor-not-allowed' 
-                : !isVotingEnabled
+                : isPrivateMode
                 ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
             {hasVoted 
               ? '✅ Voted' 
-              : !isVotingEnabled 
-              ? '🔒 Voting Closed' 
+              : isPrivateMode 
+              ? '🚫 Use Regular Browser'
+              : isVoting 
+              ? '⏳ Voting...' 
               : '🗳️ Vote'}
           </button>
         )}

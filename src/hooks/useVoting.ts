@@ -36,9 +36,26 @@ export const useVoting = () => {
     };
   }, []);
 
+  const checkPrivateMode = async () => {
+    try {
+      // Try to write to localStorage
+      localStorage.setItem('test', 'test');
+      localStorage.removeItem('test');
+      
+      // Try to write a test cookie
+      document.cookie = "testCookie=1; SameSite=Strict";
+      
+      return false; // Not in private mode
+    } catch (e) {
+      return true; // In private mode
+    }
+  };
+
   const vote = async (candidateId: string) => {
-    if (!isVotingEnabled) {
-      toast.error('Voting is currently closed');
+    // Check for private browsing first
+    const isPrivateMode = await checkPrivateMode();
+    if (isPrivateMode) {
+      toast.error('Voting is not allowed in private/incognito mode');
       return;
     }
 
@@ -50,7 +67,7 @@ export const useVoting = () => {
     const deviceId = getDeviceId();
     
     try {
-      // Additional check for private browsing
+      // Additional check for device ID
       if (!localStorage.getItem('device_id')) {
         toast.error('Voting is not allowed in private/incognito mode');
         return;
@@ -85,17 +102,23 @@ export const useVoting = () => {
       toast.success('Vote recorded successfully!');
     } catch (error) {
       console.error('Error voting:', error);
-      toast.error('Failed to record vote');
+      toast.error('Please use a regular browser window to vote');
+      return;
     }
   };
 
   const getDeviceId = () => {
-    let deviceId = localStorage.getItem('device_id');
-    if (!deviceId) {
-      deviceId = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('device_id', deviceId);
+    try {
+      let deviceId = localStorage.getItem('device_id');
+      if (!deviceId) {
+        deviceId = Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('device_id', deviceId);
+      }
+      return deviceId;
+    } catch (error) {
+      // If localStorage fails, we're likely in private mode
+      return null;
     }
-    return deviceId;
   };
 
   return { candidates, loading, hasVoted, vote, isVotingEnabled };
