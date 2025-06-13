@@ -14,7 +14,9 @@ export const useVoting = () => {
     // Listen to voting status
     const unsubscribeVotingStatus = onSnapshot(doc(db, 'settings', 'votingStatus'), (doc) => {
       if (doc.exists()) {
-        setIsVotingEnabled(doc.data()?.isEnabled || false);
+        const enabled = doc.data()?.isEnabled || false;
+        console.log('Voting status updated:', enabled); // Debug log
+        setIsVotingEnabled(enabled);
       }
     });
 

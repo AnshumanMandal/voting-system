@@ -36,13 +36,27 @@ export default function AdminPanel() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, 'settings', 'votingStatus'), (doc) => {
+    // Add this to initialize voting status if it doesn't exist
+    const initVotingStatus = async () => {
+      const statusRef = doc(db, 'settings', 'votingStatus');
+      const statusDoc = await statusRef.get();
+      if (!statusDoc.exists()) {
+        await setDoc(statusRef, {
+          isEnabled: false,
+          lastUpdated: Date.now()
+        });
+      }
+    };
+    initVotingStatus();
+
+    // Listen to voting status changes
+    const unsubscribeStatus = onSnapshot(doc(db, 'settings', 'votingStatus'), (doc) => {
       if (doc.exists()) {
         setIsVotingEnabled(doc.data()?.isEnabled || false);
       }
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeStatus();
   }, []);
 
   const addCandidate = async () => {
@@ -139,14 +153,20 @@ export default function AdminPanel() {
     return colors[index];
   };
 
+  // Update the toggle function
   const toggleVoting = async () => {
     try {
+      console.log('Current voting status:', isVotingEnabled); // Debug log
       const statusRef = doc(db, 'settings', 'votingStatus');
+      const newStatus = !isVotingEnabled;
+      
       await setDoc(statusRef, {
-        isEnabled: !isVotingEnabled,
+        isEnabled: newStatus,
         lastUpdated: Date.now()
       });
-      toast.success(`Voting is now ${!isVotingEnabled ? 'open' : 'closed'}`);
+      
+      console.log('New voting status:', newStatus); // Debug log
+      toast.success(`Voting is now ${newStatus ? 'open' : 'closed'}`);
     } catch (error) {
       console.error('Error toggling voting status:', error);
       toast.error('Failed to update voting status');
