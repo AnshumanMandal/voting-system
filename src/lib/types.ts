@@ -5,9 +5,3 @@ export interface Candidate {
   createdAt: number;
   description: string;
 }
-
-export interface Vote {
-  candidateId: string;
-  timestamp: number;
-  deviceId: string;
-}

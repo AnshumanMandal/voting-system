@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Plus, Trash2, Edit, Save, X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+import { Candidate } from '@/lib/types';  // Add this import
 
 export default function AdminPanel() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
