@@ -8,27 +8,38 @@ export const useVoting = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasVoted, setHasVoted] = useState(false);
+  const [isVotingEnabled, setIsVotingEnabled] = useState(false);
 
   useEffect(() => {
-    // Check if user has already voted
-    const voted = localStorage.getItem('has_voted');
-    setHasVoted(!!voted);
+    // Listen to voting status
+    const unsubscribeVotingStatus = onSnapshot(doc(db, 'settings', 'votingStatus'), (doc) => {
+      if (doc.exists()) {
+        setIsVotingEnabled(doc.data()?.isEnabled || false);
+      }
+    });
 
-    // Listen to candidates collection
-    const unsubscribe = onSnapshot(collection(db, 'candidates'), (snapshot) => {
+    // Listen to candidates
+    const unsubscribeCandidates = onSnapshot(collection(db, 'candidates'), (snapshot) => {
       const candidatesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Candidate[];
-      
       setCandidates(candidatesData.sort((a, b) => b.votes - a.votes));
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeVotingStatus();
+      unsubscribeCandidates();
+    };
   }, []);
 
   const vote = async (candidateId: string) => {
+    if (!isVotingEnabled) {
+      toast.error('Voting is currently closed');
+      return;
+    }
+
     if (hasVoted) {
       toast.error('You have already voted!');
       return;
@@ -37,10 +48,15 @@ export const useVoting = () => {
     const deviceId = getDeviceId();
     
     try {
-      // Check if device has already voted
+      // Additional check for private browsing
+      if (!localStorage.getItem('device_id')) {
+        toast.error('Voting is not allowed in private/incognito mode');
+        return;
+      }
+
       const votesRef = collection(db, 'votes');
       const voteQuery = await getDocs(query(votesRef, where('deviceId', '==', deviceId)));
-      
+
       if (!voteQuery.empty) {
         toast.error('This device has already voted!');
         setHasVoted(true);
@@ -80,5 +96,5 @@ export const useVoting = () => {
     return deviceId;
   };
 
-  return { candidates, loading, hasVoted, vote };
+  return { candidates, loading, hasVoted, vote, isVotingEnabled };
 };

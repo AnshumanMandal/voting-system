@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
-import { Candidate } from '@/lib/types';
+import { db } from '@/lib/firebase';
 import { Plus, Trash2, Edit, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -17,6 +16,7 @@ export default function AdminPanel() {
     votes: 0
   });
   const [pendingVotes, setPendingVotes] = useState<{[key: string]: number}>({});
+  const [isVotingEnabled, setIsVotingEnabled] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'candidates'), (snapshot) => {
@@ -29,6 +29,16 @@ export default function AdminPanel() {
       const sortedCandidates = candidatesData.sort((a, b) => a.createdAt - b.createdAt);
       setCandidates(sortedCandidates);
       setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'settings', 'votingStatus'), (doc) => {
+      if (doc.exists()) {
+        setIsVotingEnabled(doc.data()?.isEnabled || false);
+      }
     });
 
     return () => unsubscribe();
@@ -128,6 +138,20 @@ export default function AdminPanel() {
     return colors[index];
   };
 
+  const toggleVoting = async () => {
+    try {
+      const statusRef = doc(db, 'settings', 'votingStatus');
+      await setDoc(statusRef, {
+        isEnabled: !isVotingEnabled,
+        lastUpdated: Date.now()
+      });
+      toast.success(`Voting is now ${!isVotingEnabled ? 'open' : 'closed'}`);
+    } catch (error) {
+      console.error('Error toggling voting status:', error);
+      toast.error('Failed to update voting status');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -147,13 +171,25 @@ export default function AdminPanel() {
               Total Votes: {candidates.reduce((sum, c) => sum + c.votes, 0)}
             </p>
           </div>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            <Plus size={20} />
-            Add Candidate
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={toggleVoting}
+              className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 
+                ${isVotingEnabled 
+                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+            >
+              {isVotingEnabled ? '🔴 Close Voting' : '🟢 Open Voting'}
+            </button>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Plus size={20} />
+              Add Candidate
+            </button>
+          </div>
         </div>
 
         {/* Add Candidate Form */}

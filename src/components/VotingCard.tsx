@@ -10,7 +10,7 @@ interface VotingCardProps {
   rank: number;
   totalVotes: number;
   isAdmin?: boolean;
-  hideVoteButton?: boolean;
+  isVotingEnabled?: boolean;
 }
 
 const getRankColor = (rank: number) => {
@@ -65,7 +65,7 @@ export default function VotingCard({
   rank, 
   totalVotes,
   isAdmin = false,
-  hideVoteButton = false 
+  isVotingEnabled = false 
 }: VotingCardProps) {
   const [isVoting, setIsVoting] = useState(false);
   const avatarColor = generateRandomColor(candidate.id);
@@ -82,7 +82,7 @@ export default function VotingCard({
   };
 
   return (
-    <div className={`rounded-xl border-2 p-6 transition-all duration-300 hover:shadow-lg ${getRankColor(rank)}`}>
+    <div className={`rounded-xl border-2 p-6 ${getRankColor(rank)}`}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -112,17 +112,23 @@ export default function VotingCard({
         </div>
         
         {/* Only show vote button if not hidden */}
-        {!hideVoteButton && !isAdmin && (
+        {!isAdmin && (
           <button
             onClick={handleVote}
-            disabled={hasVoted || isVoting}
+            disabled={hasVoted || !isVotingEnabled}
             className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 
               ${hasVoted 
                 ? 'bg-green-100 text-green-700 cursor-not-allowed' 
+                : !isVotingEnabled
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
-            {hasVoted ? '✅ Voted' : isVoting ? '⏳ Voting...' : '🗳️ Vote'}
+            {hasVoted 
+              ? '✅ Voted' 
+              : !isVotingEnabled 
+              ? '🔒 Voting Closed' 
+              : '🗳️ Vote'}
           </button>
         )}
       </div>

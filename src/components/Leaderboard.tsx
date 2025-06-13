@@ -4,7 +4,7 @@ import VotingCard from './VotingCard';
 import { TrendingUp } from 'lucide-react';
 
 export default function Leaderboard() {
-  const { candidates, loading, hasVoted, vote } = useVoting();
+  const { candidates, loading, hasVoted, vote, isVotingEnabled } = useVoting();
   const totalVotes = candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
 
   if (loading) {
@@ -37,6 +37,13 @@ export default function Leaderboard() {
           </div>
         )}
 
+        {/* Voting Closed Status */}
+        {!isVotingEnabled && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg text-center">
+            <p className="text-yellow-800 font-medium">🔒 Voting is currently closed</p>
+          </div>
+        )}
+
         {/* Candidates Stack - Changed from grid to flex column */}
         <div className="flex flex-col space-y-4">
           {candidates.map((candidate, index) => (
@@ -47,6 +54,7 @@ export default function Leaderboard() {
               hasVoted={hasVoted}
               rank={index + 1}
               totalVotes={totalVotes}
+              isVotingEnabled={isVotingEnabled}
               isAdmin={false}
             />
           ))}
