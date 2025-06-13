@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, updateDoc, increment, addDoc, deleteDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { toast } from 'react-hot-toast';
 import { Candidate } from '@/lib/types';
-import toast from 'react-hot-toast';
 
 export const useVoting = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasVoted, setHasVoted] = useState(false);
-  const [isVotingEnabled, setIsVotingEnabled] = useState(false);
 
   useEffect(() => {
     // Listen to voting status
@@ -36,25 +35,20 @@ export const useVoting = () => {
     };
   }, []);
 
-  const checkPrivateMode = async () => {
+  const isPrivateMode = () => {
     try {
       // Try to write to localStorage
       localStorage.setItem('test', 'test');
       localStorage.removeItem('test');
-      
-      // Try to write a test cookie
-      document.cookie = "testCookie=1; SameSite=Strict";
-      
-      return false; // Not in private mode
+      return false;
     } catch (e) {
-      return true; // In private mode
+      return true;
     }
   };
 
   const vote = async (candidateId: string) => {
     // Check for private browsing first
-    const isPrivateMode = await checkPrivateMode();
-    if (isPrivateMode) {
+    if (isPrivateMode()) {
       toast.error('Voting is not allowed in private/incognito mode');
       return;
     }
@@ -64,15 +58,13 @@ export const useVoting = () => {
       return;
     }
 
-    const deviceId = getDeviceId();
-    
-    try {
-      // Additional check for device ID
-      if (!localStorage.getItem('device_id')) {
-        toast.error('Voting is not allowed in private/incognito mode');
-        return;
-      }
+    const deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+      toast.error('Unable to identify device. Please use a regular browser.');
+      return;
+    }
 
+    try {
       const votesRef = collection(db, 'votes');
       const voteQuery = await getDocs(query(votesRef, where('deviceId', '==', deviceId)));
 
@@ -82,44 +74,30 @@ export const useVoting = () => {
         return;
       }
 
-      // Update candidate votes
-      const candidateRef = doc(db, 'candidates', candidateId);
-      await updateDoc(candidateRef, {
-        votes: increment(1)
-      });
-
-      // Record the vote with device ID
-      await addDoc(collection(db, 'votes'), {
+      // Add vote record without incrementing candidate votes
+      await addDoc(votesRef, {
         candidateId,
+        deviceId,
         timestamp: Date.now(),
-        deviceId
+        isPrivate: isPrivateMode(), // Store this for reference
+        counted: !isPrivateMode() // Only count non-private votes
       });
 
-      localStorage.setItem('has_voted', 'true');
-      localStorage.setItem('voted_for', candidateId);
+      // Only increment candidate votes if not in private mode
+      if (!isPrivateMode()) {
+        const candidateRef = doc(db, 'candidates', candidateId);
+        await updateDoc(candidateRef, {
+          votes: increment(1)
+        });
+      }
+
       setHasVoted(true);
-      
       toast.success('Vote recorded successfully!');
     } catch (error) {
       console.error('Error voting:', error);
-      toast.error('Please use a regular browser window to vote');
-      return;
+      toast.error('Failed to record vote');
     }
   };
 
-  const getDeviceId = () => {
-    try {
-      let deviceId = localStorage.getItem('device_id');
-      if (!deviceId) {
-        deviceId = Math.random().toString(36).substring(2, 15);
-        localStorage.setItem('device_id', deviceId);
-      }
-      return deviceId;
-    } catch (error) {
-      // If localStorage fails, we're likely in private mode
-      return null;
-    }
-  };
-
-  return { candidates, loading, hasVoted, vote, isVotingEnabled };
+  return { candidates, loading, hasVoted, vote };
 };

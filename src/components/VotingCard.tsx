@@ -68,7 +68,7 @@ export default function VotingCard({
   isAdmin = false
 }: VotingCardProps) {
   const [isVoting, setIsVoting] = useState(false);
-  const [isPrivateMode, setIsPrivateMode] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const avatarColor = generateRandomColor(candidate.id);
 
   useEffect(() => {
@@ -77,22 +77,25 @@ export default function VotingCard({
       try {
         localStorage.setItem('test', 'test');
         localStorage.removeItem('test');
-        setIsPrivateMode(false);
+        setIsPrivate(false);
       } catch (e) {
-        setIsPrivateMode(true);
+        setIsPrivate(true);
       }
     };
     checkPrivateMode();
   }, []);
 
   const handleVote = async () => {
-    if (isPrivateMode) {
-      toast.error('Please use a regular browser window to vote');
+    if (isPrivate) {
+      toast.error('Votes from private/incognito mode are not counted');
       return;
     }
     setIsVoting(true);
-    await onVote(candidate.id);
-    setIsVoting(false);
+    try {
+      await onVote(candidate.id);
+    } finally {
+      setIsVoting(false);
+    }
   };
 
   const getVotePercentage = () => {
@@ -132,25 +135,32 @@ export default function VotingCard({
         
         {/* Only show vote button if not hidden */}
         {!isAdmin && (
-          <button
-            onClick={handleVote}
-            disabled={hasVoted || isVoting || isPrivateMode}
-            className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 
-              ${hasVoted 
-                ? 'bg-green-100 text-green-700 cursor-not-allowed' 
-                : isPrivateMode
-                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-          >
-            {hasVoted 
-              ? '✅ Voted' 
-              : isPrivateMode 
-              ? '🚫 Use Regular Browser'
-              : isVoting 
-              ? '⏳ Voting...' 
-              : '🗳️ Vote'}
-          </button>
+          <>
+            {isPrivate && (
+              <div className="mb-2 text-sm text-red-500">
+                ⚠️ Votes from private/incognito mode are not counted
+              </div>
+            )}
+            <button
+              onClick={handleVote}
+              disabled={hasVoted || isVoting || isPrivate}
+              className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 
+                ${hasVoted 
+                  ? 'bg-green-100 text-green-700 cursor-not-allowed' 
+                  : isPrivate
+                  ? 'bg-red-100 text-red-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+            >
+              {hasVoted 
+                ? '✅ Voted' 
+                : isPrivate 
+                ? '🚫 Private Mode Not Allowed'
+                : isVoting 
+                ? '⏳ Voting...' 
+                : '🗳️ Vote'}
+            </button>
+          </>
         )}
       </div>
     </div>
