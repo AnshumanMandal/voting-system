@@ -21,7 +21,7 @@ const getRankColor = (rank: number) => {
     case 3:
       return 'border-orange-400 bg-orange-50';
     default:
-      return 'border-gray-200';
+      return 'border-gray-200 bg-white';
   }
 };
 
