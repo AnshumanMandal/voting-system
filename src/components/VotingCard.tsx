@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Candidate } from '@/lib/types';
 import { Vote, CheckCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast'; // Changed from react-toastify to react-hot-toast
+import { toast } from 'react-hot-toast';
 
 interface VotingCardProps {
   candidate: Candidate;
@@ -11,7 +11,6 @@ interface VotingCardProps {
   rank: number;
   totalVotes: number;
   isAdmin?: boolean;
-  isVotingEnabled?: boolean;
 }
 
 const getRankColor = (rank: number) => {
@@ -72,8 +71,7 @@ export default function VotingCard({
   const avatarColor = generateRandomColor(candidate.id);
 
   useEffect(() => {
-    // Check for private mode on component mount
-    const checkPrivateMode = async () => {
+    const checkPrivateMode = () => {
       try {
         localStorage.setItem('test', 'test');
         localStorage.removeItem('test');
@@ -87,9 +85,10 @@ export default function VotingCard({
 
   const handleVote = async () => {
     if (isPrivate) {
-      toast.error('Votes from private/incognito mode are not counted');
+      toast.error('Voting is not allowed in private/incognito mode');
       return;
     }
+    
     setIsVoting(true);
     try {
       await onVote(candidate.id);
@@ -105,6 +104,11 @@ export default function VotingCard({
 
   return (
     <div className={`rounded-xl border-2 p-6 ${getRankColor(rank)}`}>
+      {!isAdmin && isPrivate && (
+        <div className="mb-2 text-sm text-red-500">
+          ⚠️ Voting is not allowed in private/incognito mode
+        </div>
+      )}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -135,32 +139,25 @@ export default function VotingCard({
         
         {/* Only show vote button if not hidden */}
         {!isAdmin && (
-          <>
-            {isPrivate && (
-              <div className="mb-2 text-sm text-red-500">
-                ⚠️ Votes from private/incognito mode are not counted
-              </div>
-            )}
-            <button
-              onClick={handleVote}
-              disabled={hasVoted || isVoting || isPrivate}
-              className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 
-                ${hasVoted 
-                  ? 'bg-green-100 text-green-700 cursor-not-allowed' 
-                  : isPrivate
-                  ? 'bg-red-100 text-red-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-            >
-              {hasVoted 
-                ? '✅ Voted' 
-                : isPrivate 
-                ? '🚫 Private Mode Not Allowed'
-                : isVoting 
-                ? '⏳ Voting...' 
-                : '🗳️ Vote'}
-            </button>
-          </>
+          <button
+            onClick={handleVote}
+            disabled={hasVoted || isVoting || isPrivate}
+            className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 
+              ${hasVoted 
+                ? 'bg-green-100 text-green-700 cursor-not-allowed' 
+                : isPrivate
+                ? 'bg-red-100 text-red-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+          >
+            {hasVoted 
+              ? '✅ Voted' 
+              : isPrivate 
+              ? '🚫 Private Mode Not Allowed'
+              : isVoting 
+              ? '⏳ Voting...' 
+              : '🗳️ Vote'}
+          </button>
         )}
       </div>
     </div>
