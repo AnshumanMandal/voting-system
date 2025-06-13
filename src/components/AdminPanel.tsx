@@ -114,19 +114,13 @@ export default function AdminPanel() {
     }
   };
 
-  const updateVotes = async (id: string) => {
+  const updateVotes = async (id: string, newVotes: number) => {
     try {
-      if (pendingVotes[id] !== undefined) {
-        const candidateRef = doc(db, 'candidates', id);
-        await updateDoc(candidateRef, { votes: pendingVotes[id] });
-        
-        // Clear pending vote after successful update
-        const newPendingVotes = { ...pendingVotes };
-        delete newPendingVotes[id];
-        setPendingVotes(newPendingVotes);
-        
-        toast.success('Votes updated successfully');
-      }
+      const candidateRef = doc(db, 'candidates', id);
+      await updateDoc(candidateRef, {
+        votes: newVotes
+      });
+      toast.success('Votes updated successfully');
     } catch (error) {
       console.error('Error updating votes:', error);
       toast.error('Failed to update votes');
@@ -342,17 +336,17 @@ export default function AdminPanel() {
                               [candidate.id]: newVotes
                             });
                           }}
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded"
                           min="0"
                         />
                         {pendingVotes[candidate.id] !== undefined && 
                           pendingVotes[candidate.id] !== candidate.votes && (
-                            <button
-                              onClick={() => updateVotes(candidate.id)}
-                              className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                            >
-                              Update
-                            </button>
+                          <button
+                            onClick={() => updateVotes(candidate.id, pendingVotes[candidate.id])}
+                            className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                          >
+                            Update
+                          </button>
                         )}
                       </div>
                     </td>
