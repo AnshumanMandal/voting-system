@@ -8,6 +8,11 @@ export default function ProtectedLeaderboard() {
   const { candidates, loading } = useVoting();
   const totalVotes = candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
 
+  // Add an async dummy function that returns a Promise
+  const dummyVote = async (id: string): Promise<void> => {
+    return Promise.resolve();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -39,7 +44,7 @@ export default function ProtectedLeaderboard() {
             <VotingCard
               key={candidate.id}
               candidate={candidate}
-              onVote={() => {}}
+              onVote={dummyVote} // Use the async dummy function here
               hasVoted={true}
               rank={index + 1}
               totalVotes={totalVotes}
