@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Plus, Trash2, Edit, Save, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { Candidate } from '@/lib/types';  // Add this import
+import { Candidate } from '@/lib/types';
 
 export default function AdminPanel() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -19,27 +19,26 @@ export default function AdminPanel() {
   const [pendingVotes, setPendingVotes] = useState<{[key: string]: number}>({});
   const [isVotingEnabled, setIsVotingEnabled] = useState(false);
 
+  // Listen to candidates
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'candidates'), (snapshot) => {
       const candidatesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Candidate[];
-      
-      // Sort by creation time to maintain consistent order
-      const sortedCandidates = candidatesData.sort((a, b) => a.createdAt - b.createdAt);
-      setCandidates(sortedCandidates);
+      setCandidates(candidatesData.sort((a, b) => b.votes - a.votes));
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
+  // Initialize and listen to voting status
   useEffect(() => {
-    // Add this to initialize voting status if it doesn't exist
     const initVotingStatus = async () => {
       const statusRef = doc(db, 'settings', 'votingStatus');
-      const statusDoc = await statusRef.get();
+      const statusDoc = await getDoc(statusRef);
+      
       if (!statusDoc.exists()) {
         await setDoc(statusRef, {
           isEnabled: false,
@@ -47,6 +46,7 @@ export default function AdminPanel() {
         });
       }
     };
+
     initVotingStatus();
 
     // Listen to voting status changes
