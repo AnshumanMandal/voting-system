@@ -10,6 +10,7 @@ interface VotingCardProps {
   rank: number;
   totalVotes: number;
   isAdmin?: boolean;
+  hideVoteButton?: boolean;
 }
 
 const getRankColor = (rank: number) => {
@@ -57,7 +58,15 @@ const generateRandomColor = (id: string) => {
   return colors[index];
 };
 
-export default function VotingCard({ candidate, onVote, hasVoted, rank, totalVotes, isAdmin = false }: VotingCardProps) {
+export default function VotingCard({ 
+  candidate, 
+  onVote, 
+  hasVoted, 
+  rank, 
+  totalVotes,
+  isAdmin = false,
+  hideVoteButton = false 
+}: VotingCardProps) {
   const [isVoting, setIsVoting] = useState(false);
   const avatarColor = generateRandomColor(candidate.id);
 
@@ -102,32 +111,20 @@ export default function VotingCard({ candidate, onVote, hasVoted, rank, totalVot
           </div>
         </div>
         
-        <button
-          onClick={handleVote}
-          disabled={hasVoted || isVoting}
-          className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-            hasVoted 
-              ? 'bg-green-100 text-green-700 cursor-not-allowed' 
-              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
-          }`}
-        >
-          {hasVoted ? (
-            <>
-              <CheckCircle size={20} />
-              Voted
-            </>
-          ) : isVoting ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Voting...
-            </>
-          ) : (
-            <>
-              <Vote size={20} />
-              Vote
-            </>
-          )}
-        </button>
+        {/* Only show vote button if not hidden */}
+        {!hideVoteButton && !isAdmin && (
+          <button
+            onClick={handleVote}
+            disabled={hasVoted || isVoting}
+            className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 
+              ${hasVoted 
+                ? 'bg-green-100 text-green-700 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+          >
+            {hasVoted ? '✅ Voted' : isVoting ? '⏳ Voting...' : '🗳️ Vote'}
+          </button>
+        )}
       </div>
     </div>
   );
