@@ -2,14 +2,35 @@
 
 import { useVoting } from '@/hooks/useVoting';
 import { TrendingUp } from 'lucide-react';
-import VotingCard from './VotingCard';
 
 export default function ProtectedLeaderboard() {
   const { candidates, loading } = useVoting();
   const totalVotes = candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
 
-  const dummyVote = async (id: string): Promise<void> => {
-    return Promise.resolve();
+  const getRankColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return 'border-yellow-500';
+      case 2:
+        return 'border-gray-400';
+      case 3:
+        return 'border-orange-400';
+      default:
+        return 'border-gray-200';
+    }
+  };
+
+  const getRankDisplay = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return '🥇';
+      case 2:
+        return '🥈';
+      case 3:
+        return '🥉';
+      default:
+        return rank;
+    }
   };
 
   if (loading) {
@@ -24,9 +45,7 @@ export default function ProtectedLeaderboard() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-3xl mx-auto">
         <div className="text-center pt-2">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4 p-2">
-            Protected Leaderboard View
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">Live Results</h1>
           <div className="flex items-center justify-center gap-2 text-gray-600 mb-8">
             <TrendingUp size={20} />
             <span>Live Updates</span>
@@ -43,13 +62,19 @@ export default function ProtectedLeaderboard() {
             return (
               <div
                 key={candidate.id}
-                className="bg-white rounded-xl p-6 shadow-md"
+                className={`bg-white rounded-xl border-2 p-6 transition-all duration-300 hover:shadow-lg ${getRankColor(
+                  index + 1
+                )}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="text-2xl font-bold">#{index + 1}</div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      {getRankDisplay(index + 1)}
+                    </div>
                     <div>
-                      <h3 className="text-xl font-bold">{candidate.name}</h3>
+                      <h3 className="text-xl font-bold text-gray-800">
+                        {candidate.name}
+                      </h3>
                       <p className="text-gray-600">{candidate.description}</p>
                     </div>
                   </div>
@@ -60,10 +85,6 @@ export default function ProtectedLeaderboard() {
               </div>
             );
           })}
-        </div>
-
-        <div className="text-center mt-8 text-sm text-gray-500">
-          Protected Leaderboard View
         </div>
       </div>
     </div>
