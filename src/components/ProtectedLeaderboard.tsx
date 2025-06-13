@@ -8,7 +8,6 @@ export default function ProtectedLeaderboard() {
   const { candidates, loading } = useVoting();
   const totalVotes = candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
 
-  // Add an async dummy function that returns a Promise
   const dummyVote = async (id: string): Promise<void> => {
     return Promise.resolve();
   };
@@ -28,34 +27,43 @@ export default function ProtectedLeaderboard() {
           <h1 className="text-4xl font-bold text-gray-800 mb-4 p-2">
             Protected Leaderboard View
           </h1>
-          <div className="flex items-center justify-center gap-8 text-gray-600 mb-8">
-            <div className="flex items-center gap-2">
-              <TrendingUp size={20} />
-              <span>Live Updates</span>
-            </div>
-            <div>
-              <span className="font-semibold">Total Votes: {totalVotes}</span>
-            </div>
+          <div className="flex items-center justify-center gap-2 text-gray-600 mb-8">
+            <TrendingUp size={20} />
+            <span>Live Updates</span>
           </div>
         </div>
 
         <div className="flex flex-col space-y-4">
-          {candidates.map((candidate, index) => (
-            <VotingCard
-              key={candidate.id}
-              candidate={candidate}
-              onVote={dummyVote} // Use the async dummy function here
-              hasVoted={true}
-              rank={index + 1}
-              totalVotes={totalVotes}
-              isAdmin={true}
-              hideVoteButton={true}
-            />
-          ))}
+          {candidates.map((candidate, index) => {
+            const votePercentage =
+              totalVotes === 0
+                ? 0
+                : ((candidate.votes / totalVotes) * 100).toFixed(1);
+
+            return (
+              <div
+                key={candidate.id}
+                className="bg-white rounded-xl p-6 shadow-md"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="text-2xl font-bold">#{index + 1}</div>
+                    <div>
+                      <h3 className="text-xl font-bold">{candidate.name}</h3>
+                      <p className="text-gray-600">{candidate.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {votePercentage}%
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="text-center mt-8 text-sm text-gray-500">
-          This is a protected view of the leaderboard
+          Protected Leaderboard View
         </div>
       </div>
     </div>
