@@ -16,6 +16,7 @@ export default function AdminPanel() {
     description: '',
     votes: 0
   });
+  const [pendingVotes, setPendingVotes] = useState<{[key: string]: number}>({});
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'candidates'), (snapshot) => {
@@ -89,6 +90,25 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error deleting candidate:', error);
       toast.error('Failed to delete candidate');
+    }
+  };
+
+  const updateVotes = async (id: string) => {
+    try {
+      if (pendingVotes[id] !== undefined) {
+        const candidateRef = doc(db, 'candidates', id);
+        await updateDoc(candidateRef, { votes: pendingVotes[id] });
+        
+        // Clear pending vote after successful update
+        const newPendingVotes = { ...pendingVotes };
+        delete newPendingVotes[id];
+        setPendingVotes(newPendingVotes);
+        
+        toast.success('Votes updated successfully');
+      }
+    } catch (error) {
+      console.error('Error updating votes:', error);
+      toast.error('Failed to update votes');
     }
   };
 
@@ -242,16 +262,30 @@ export default function AdminPanel() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <input
-                        type="number"
-                        value={candidate.votes}
-                        onChange={(e) => {
-                          const newVotes = Math.max(0, parseInt(e.target.value) || 0);
-                          updateCandidate(candidate.id, 'votes', newVotes);
-                        }}
-                        className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                        min="0"
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={pendingVotes[candidate.id] ?? candidate.votes}
+                          onChange={(e) => {
+                            const newVotes = Math.max(0, parseInt(e.target.value) || 0);
+                            setPendingVotes({
+                              ...pendingVotes,
+                              [candidate.id]: newVotes
+                            });
+                          }}
+                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          min="0"
+                        />
+                        {pendingVotes[candidate.id] !== undefined && 
+                          pendingVotes[candidate.id] !== candidate.votes && (
+                            <button
+                              onClick={() => updateVotes(candidate.id)}
+                              className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                            >
+                              Update
+                            </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       {((candidate.votes / candidates.reduce((sum, c) => sum + c.votes, 0)) * 100).toFixed(1)}%
