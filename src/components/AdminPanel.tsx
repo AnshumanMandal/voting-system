@@ -155,15 +155,33 @@ export default function AdminPanel() {
       const statusRef = doc(db, 'settings', 'votingStatus');
       const newStatus = !isVotingEnabled;
       
-      await setDoc(statusRef, {
-        isEnabled: newStatus,
-        lastUpdated: Date.now()
-      }, { merge: true }); // Add merge option
+      // Add retry logic
+      const maxRetries = 3;
+      let retryCount = 0;
       
-      toast.success(`Voting is now ${newStatus ? 'open' : 'closed'}`);
+      const updateStatus = async () => {
+        try {
+          await setDoc(statusRef, {
+            isEnabled: newStatus,
+            lastUpdated: Date.now()
+          });
+          console.log('Voting status updated successfully');
+          toast.success(`Voting is now ${newStatus ? 'open' : 'closed'}`);
+        } catch (error) {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Retrying update... Attempt ${retryCount}`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between retries
+            return updateStatus();
+          }
+          throw error;
+        }
+      };
+
+      await updateStatus();
     } catch (error) {
-      console.error('Error toggling voting status:', error);
-      toast.error('Failed to update voting status');
+      console.error('Failed to update voting status:', error);
+      toast.error('Failed to update voting status. Please check your connection and try again.');
     }
   };
 
