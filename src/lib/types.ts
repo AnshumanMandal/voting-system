@@ -1,10 +1,9 @@
 export interface Candidate {
   id: string;
   name: string;
-  image: string;
   votes: number;
   createdAt: number;
-  description: string; // Add this field
+  description: string;
 }
 
 export interface Vote {

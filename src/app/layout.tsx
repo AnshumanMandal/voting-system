@@ -5,8 +5,13 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Live Voting System',
-  description: 'Real-time voting system with leaderboard',
+  title: 'InnovateX',
+  description: 'Real-time voting platform',
+  icons: {
+    icon: '/logos/innovatex.png',
+    shortcut: '/logos/innovatex.png',
+    apple: '/logos/innovatex.png',
+  },
 };
 
 export default function RootLayout({

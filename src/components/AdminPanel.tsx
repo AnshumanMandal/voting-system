@@ -13,7 +13,6 @@ export default function AdminPanel() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCandidate, setNewCandidate] = useState({
     name: '',
-    image: '',
     description: '',
     votes: 0
   });
@@ -41,11 +40,6 @@ export default function AdminPanel() {
       return;
     }
 
-    if (!newCandidate.image.trim()) {
-      toast.error('Image URL is required');
-      return;
-    }
-
     if (!newCandidate.description.trim()) {
       toast.error('Description is required');
       return;
@@ -54,7 +48,6 @@ export default function AdminPanel() {
     try {
       const candidateData = {
         name: newCandidate.name.trim(),
-        image: newCandidate.image.trim(),
         description: newCandidate.description.trim(),
         votes: 0,
         createdAt: Date.now() // Add timestamp when creating
@@ -65,7 +58,6 @@ export default function AdminPanel() {
       // Reset form and close modal
       setNewCandidate({
         name: '',
-        image: '',
         description: '',
         votes: 0
       });
@@ -98,6 +90,22 @@ export default function AdminPanel() {
       console.error('Error deleting candidate:', error);
       toast.error('Failed to delete candidate');
     }
+  };
+
+  // Function to generate random color for candidate circle
+  const generateRandomColor = (id: string) => {
+    const colors = [
+      'bg-red-500',
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-yellow-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-teal-500'
+    ];
+    const index = parseInt(id.substring(0, 8), 16) % colors.length;
+    return colors[index];
   };
 
   if (loading) {
@@ -150,13 +158,6 @@ export default function AdminPanel() {
                   onChange={(e) => setNewCandidate({...newCandidate, name: e.target.value})}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  value={newCandidate.image}
-                  onChange={(e) => setNewCandidate({...newCandidate, image: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
                 <textarea
                   placeholder="Description"
                   value={newCandidate.description}
@@ -201,11 +202,9 @@ export default function AdminPanel() {
                   <tr key={candidate.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <img 
-                          src={candidate.image} 
-                          alt={candidate.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <div className={`w-12 h-12 rounded-full ${generateRandomColor(candidate.id)} flex items-center justify-center text-white font-bold`}>
+                          {candidate.name.charAt(0).toUpperCase()}
+                        </div>
                         {editingId === candidate.id ? (
                           <input
                             type="text"

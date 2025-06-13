@@ -19,9 +19,9 @@ const getRankColor = (rank: number) => {
     case 2:
       return 'border-gray-400 bg-gray-50';
     case 3:
-      return 'border-orange-500 bg-orange-50';
+      return 'border-orange-400 bg-orange-50';
     default:
-      return 'border-gray-200 bg-white';
+      return 'border-gray-200';
   }
 };
 
@@ -34,12 +34,32 @@ const getRankBadge = (rank: number) => {
     case 3:
       return '🥉';
     default:
-      return `#${rank}`;
+      return rank;
   }
+};
+
+const generateRandomColor = (id: string) => {
+  const colors = [
+    'bg-blue-500',
+    'bg-red-500',
+    'bg-green-500',
+    'bg-yellow-500',
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-teal-500',
+  ];
+  
+  const index = Math.abs(id.split('').reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0)) % colors.length;
+  
+  return colors[index];
 };
 
 export default function VotingCard({ candidate, onVote, hasVoted, rank, totalVotes, isAdmin = false }: VotingCardProps) {
   const [isVoting, setIsVoting] = useState(false);
+  const avatarColor = generateRandomColor(candidate.id);
 
   const handleVote = async () => {
     setIsVoting(true);
@@ -54,59 +74,61 @@ export default function VotingCard({ candidate, onVote, hasVoted, rank, totalVot
 
   return (
     <div className={`rounded-xl border-2 p-6 transition-all duration-300 hover:shadow-lg ${getRankColor(rank)}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className={`text-2xl font-bold ${rank <= 3 ? 'animate-pulse-slow' : ''}`}>
-            {getRankBadge(rank)}
-          </span>
-          <img 
-            src={candidate.image} 
-            alt={candidate.name}
-            className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md"
-          />
-          <div>
-            <h3 className="text-xl font-bold">{candidate.name}</h3>
-            <p className="opacity-75">{candidate.description}</p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className={`text-2xl font-bold ${rank <= 3 ? 'animate-pulse-slow' : ''}`}>
+              {getRankBadge(rank)}
+            </span>
+            <div 
+              className={`w-16 h-16 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-2xl shadow-md`}
+            >
+              {candidate.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h3 className="text-xl font-bold">{candidate.name}</h3>
+              <p className="opacity-75">{candidate.description}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            {isAdmin ? (
+              <>
+                <div className="text-3xl font-bold text-blue-600">{candidate.votes}</div>
+                <div className="text-sm text-gray-500">votes</div>
+              </>
+            ) : (
+              <div className="text-2xl font-bold text-blue-600">{getVotePercentage()}%</div>
+            )}
           </div>
         </div>
-        <div className="text-right">
-          {isAdmin ? (
+        
+        <button
+          onClick={handleVote}
+          disabled={hasVoted || isVoting}
+          className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+            hasVoted 
+              ? 'bg-green-100 text-green-700 cursor-not-allowed' 
+              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+          }`}
+        >
+          {hasVoted ? (
             <>
-              <div className="text-3xl font-bold text-blue-600">{candidate.votes}</div>
-              <div className="text-sm text-gray-500">votes</div>
+              <CheckCircle size={20} />
+              Voted
+            </>
+          ) : isVoting ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              Voting...
             </>
           ) : (
-            <div className="text-2xl font-bold text-blue-600">{getVotePercentage()}%</div>
+            <>
+              <Vote size={20} />
+              Vote
+            </>
           )}
-        </div>
+        </button>
       </div>
-      
-      <button
-        onClick={handleVote}
-        disabled={hasVoted || isVoting}
-        className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-          hasVoted 
-            ? 'bg-green-100 text-green-700 cursor-not-allowed' 
-            : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
-        }`}
-      >
-        {hasVoted ? (
-          <>
-            <CheckCircle size={20} />
-            Voted
-          </>
-        ) : isVoting ? (
-          <>
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            Voting...
-          </>
-        ) : (
-          <>
-            <Vote size={20} />
-            Vote
-          </>
-        )}
-      </button>
     </div>
   );
 }
